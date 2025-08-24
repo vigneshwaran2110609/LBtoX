@@ -13,9 +13,10 @@ public class RSSFeedService {
 		this.restTemplate = new RestTemplate();
 	}
 	
-	public void getRssFeed(String userName) {
-		String rssUrl = "https://letterboxd.com/" + userName + "/rss/diary/";
+	public LetterboxdRssFeed getRssFeed(String userName) {
+		String rssUrl = "https://letterboxd.com/" + userName + "/rss";
         LetterboxdRssFeed letterboxdRssEntry =  restTemplate.getForObject(rssUrl, LetterboxdRssFeed.class);
+        return letterboxdRssEntry;
 	}
 
 }
