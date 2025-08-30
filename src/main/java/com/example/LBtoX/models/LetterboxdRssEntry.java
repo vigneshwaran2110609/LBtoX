@@ -18,7 +18,7 @@ public class LetterboxdRssEntry {
     @JacksonXmlProperty(localName = "guid")
     private String guid;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "EEE, dd MMM yyyy HH:mm:ss Z")
+    @JsonFormat(pattern = "EEE, d MMM yyyy HH:mm:ss Z", locale = "en")
     @JacksonXmlProperty(localName = "pubDate")
     private ZonedDateTime pubDate;
 
