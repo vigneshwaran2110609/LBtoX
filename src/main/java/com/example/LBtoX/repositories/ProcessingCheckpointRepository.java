@@ -17,7 +17,7 @@ public interface ProcessingCheckpointRepository extends JpaRepository<Processing
     ProcessingCheckpoint findCheckpoint();
 	
 	@Modifying
-	@Query("UPDATE ProcessingCheckpoint p SET p.lastProcessedId = :newValue")
+	@Query("UPDATE ProcessingCheckpoint p SET p.lastProcessedId = :newValue where p.id = 1")
 	int updateLastProcessedId(@Param("newValue") Long newValue);
 	
 	

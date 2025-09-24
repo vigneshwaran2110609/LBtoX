@@ -1,27 +1,21 @@
 package com.example.LBtoX.scheduler;
-// I dont this will be necessary
 import org.springframework.stereotype.Component;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.example.LBtoX.services.*;
 import com.example.LBtoX.models.*;
+import com.example.LBtoX.messaging.RssFeedTaskProducer;
 import java.util.*;
 
 @Component
 public class RSSFeedPollingScheduler {
 	
-	private final RSSFeedService rssFeedService;
-	
-	public RSSFeedPollingScheduler(RSSFeedService rssFeedService) {
-		this.rssFeedService = rssFeedService;
-	}
+	@Autowired
+	private RssFeedTaskProducer producer;
 	
 	@Scheduled(fixedRate = 5000)
 	public void processFeeds() {
-		LetterboxdRssFeed letterboxdRssFeed = this.rssFeedService.getRssFeed("vignesh27082003");
-		List<LetterboxdRssEntry> entries = letterboxdRssFeed.getItems();
-		for (LetterboxdRssEntry entry : entries) {
-			System.out.println(entry.getFilmTitle());
-	    }
+		producer.processFeed("FeedProcessingQueue", "ProcessRssFeeds");
 	}
 
 }
