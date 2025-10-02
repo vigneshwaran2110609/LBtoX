@@ -13,7 +13,7 @@ public class RSSFeedPollingScheduler {
 	@Autowired
 	private RssFeedTaskProducer producer;
 	
-	@Scheduled(fixedRate = 5000)
+	@Scheduled(fixedRate = 1000)
 	public void processFeeds() {
 		producer.processFeed("FeedProcessingQueue", "ProcessRssFeeds");
 	}

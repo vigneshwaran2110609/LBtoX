@@ -21,13 +21,13 @@ public class RSSFeedService {
         return letterboxdRssEntry;
 	}
 	
-	public List<LetterboxdRssFeed> getFeedsFromProfiles(List<LetterboxdProfile> profiles){
-		List<LetterboxdRssFeed> feeds = new ArrayList<>();
-		for (LetterboxdProfile profile: profiles) {
-			LetterboxdRssFeed feed = getRssFeed(profile.getLetterboxdId());
-			feeds.add(feed);
-		}
-		return feeds;
+	public Map<LetterboxdProfile, LetterboxdRssFeed> getFeedsFromProfiles(List<LetterboxdProfile> profiles) {
+	    Map<LetterboxdProfile, LetterboxdRssFeed> feedMap = new HashMap<>();
+	    for (LetterboxdProfile profile : profiles) {
+	        LetterboxdRssFeed feed = getRssFeed(profile.getLetterboxdId());
+	        feedMap.put(profile, feed);
+	    }
+	    return feedMap;
 	}
 
 }
