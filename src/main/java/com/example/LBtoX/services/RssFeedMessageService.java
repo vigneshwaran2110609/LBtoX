@@ -26,7 +26,7 @@ public class RssFeedMessageService {
 	private RSSFeedService rssFeedService;
 	
 	@Transactional	
-	public void processRssFeed() {
+	public Map<LetterboxdProfile, LetterboxdRssFeed> processRssFeed() {
 	    ExecutorService executor = Executors.newFixedThreadPool(5);
 	    Map<LetterboxdProfile, LetterboxdRssFeed> mainFeedMap = new ConcurrentHashMap<>();
 	    
@@ -50,6 +50,7 @@ public class RssFeedMessageService {
 	    }
 	    
 	    //my logic here , or call a function
+	    return mainFeedMap;
 	    
 	}
 
