@@ -13,9 +13,13 @@ public class RSSFeedPollingScheduler {
 	@Autowired
 	private RssFeedTaskProducer producer;
 	
+	@Autowired
+	private LastProcessedCycleService lastProcessedCycleService;
+	
 	@Scheduled(fixedRate = 1000)
 	public void processFeeds() {
-		producer.processFeed("FeedProcessingQueue", "ProcessRssFeeds");
+		Long cycle = lastProcessedCycleService.getLastProcessedCycle();
+		producer.processFeed("FeedProcessingQueue", cycle);
 	}
 
 }

@@ -11,7 +11,7 @@ public class RssFeedTaskProducer {
 	@Autowired
     private JmsTemplate jmsTemplate;
 	
-	public void processFeed(String queueName, String message) {
+	public void processFeed(String queueName, Long message) {
 		
 		long queueSize = QueueUtils.getQueueSize(queueName);
 		

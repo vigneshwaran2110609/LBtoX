@@ -7,5 +7,4 @@ import java.util.List;
 
 @Repository
 public interface RssFeedRepository extends JpaRepository<LetterboxdProfile, Long>{
-    List<LetterboxdProfile> findByIdBetween(Long startId, Long endId);
 }
