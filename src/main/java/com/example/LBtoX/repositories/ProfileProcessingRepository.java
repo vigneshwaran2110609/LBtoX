@@ -35,5 +35,12 @@ public interface ProfileProcessingRepository extends JpaRepository<ProfileProces
 	            @Param("cycleId") Long cycleId,
 	            @Param("ids") List<Long> ids
 	    );
+	 
+	    @Modifying
+	    @Query(value = """
+	        DELETE FROM profile_processing
+	        WHERE cycle_id = :cycleId
+	        """, nativeQuery = true)
+	    void deleteByCycleId(@Param("cycleId") Long cycleId);
 	}	
 	

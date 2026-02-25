@@ -23,8 +23,7 @@ public class RssFeedMessageService {
 	public Map<LetterboxdProfile, LetterboxdRssFeed> processBatch(Long cycleId, int batchSize) {
 		List<Long> ids = processingRepository.lockNextBatch(cycleId, batchSize);
 
-        List<LetterboxdProfile> profiles =
-                profileRepository.findAllById(ids);
+        List<LetterboxdProfile> profiles = profileRepository.findAllById(ids);
 
         Map<LetterboxdProfile, LetterboxdRssFeed> result = rssFeedService.getFeedsFromProfiles(profiles);
 

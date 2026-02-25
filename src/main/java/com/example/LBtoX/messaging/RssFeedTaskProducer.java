@@ -12,12 +12,7 @@ public class RssFeedTaskProducer {
     private JmsTemplate jmsTemplate;
 	
 	public void processFeed(String queueName, Long message) {
-		
-		long queueSize = QueueUtils.getQueueSize(queueName);
-		
-		if (queueSize < 100) {
 			jmsTemplate.convertAndSend(queueName, message);
-		}
     }
 
 }

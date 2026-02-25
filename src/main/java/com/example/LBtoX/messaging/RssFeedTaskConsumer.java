@@ -18,9 +18,6 @@ import java.time.ZonedDateTime;
 public class RssFeedTaskConsumer {
 	
 	@Autowired
-	private RssFeedMessageService worker;
-	
-	@Autowired
 	private RSSFeedService rssFeedService;
 	
 	@Autowired
@@ -35,10 +32,10 @@ public class RssFeedTaskConsumer {
         for (int i = 0; i < threadCount; i++) {
             executor.submit(() -> {
                 while (true) {
-                    Map<LetterboxdProfile, LetterboxdRssFeed> mainFeedMap =
-                            rssFeedMessageService.processBatch(cycle, 1000);
+                    Map<LetterboxdProfile, LetterboxdRssFeed> mainFeedMap = rssFeedMessageService.processBatch(cycle, 1000);
                     for (Map.Entry<LetterboxdProfile, LetterboxdRssFeed> entry
                             : mainFeedMap.entrySet()) {
+                    	System.out.println(entry.getValue());
                     	LetterboxdProfile profile = entry.getKey();
             		    LetterboxdRssFeed feed = entry.getValue();
             		    ZonedDateTime firstEntryPubDate = rssFeedService.getFirstEntryPubDate(feed);
@@ -48,6 +45,7 @@ public class RssFeedTaskConsumer {
             		    		//process all the entries present
             		    		List<LetterboxdRssEntry> feedEntries = feed.getItems();
             		    		for (LetterboxdRssEntry ent: feedEntries) {
+            		    			System.out.println(ent);
             		    			//tweet function		
             		    		}
             		    		//update pubdate function
