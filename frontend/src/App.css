@@ -1,0 +1,34 @@
+/* Minimal App.css to satisfy import in src/App.jsx */
+.app-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.app-content {
+  width: 100%;
+  max-width: 600px;
+}
+
+.header {
+  text-align: center;
+  color: white;
+  margin-bottom: 40px;
+}
+
+.main-card {
+  background: white;
+  border-radius: 16px;
+  padding: 40px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+.footer {
+  text-align: center;
+  color: white;
+  margin-top: 24px;
+  font-size: 14px;
+  opacity: 0.9;
+}

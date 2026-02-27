@@ -35,7 +35,7 @@ public class RssFeedTaskConsumer {
                     Map<LetterboxdProfile, LetterboxdRssFeed> mainFeedMap = rssFeedMessageService.processBatch(cycle, 1000);
                     for (Map.Entry<LetterboxdProfile, LetterboxdRssFeed> entry
                             : mainFeedMap.entrySet()) {
-                    	System.out.println(entry.getValue());
+                    	// System.out.println(entry.getValue());
                     	LetterboxdProfile profile = entry.getKey();
             		    LetterboxdRssFeed feed = entry.getValue();
             		    ZonedDateTime firstEntryPubDate = rssFeedService.getFirstEntryPubDate(feed);
@@ -45,7 +45,7 @@ public class RssFeedTaskConsumer {
             		    		//process all the entries present
             		    		List<LetterboxdRssEntry> feedEntries = feed.getItems();
             		    		for (LetterboxdRssEntry ent: feedEntries) {
-            		    			System.out.println(ent);
+            		    			// System.out.println(ent);
             		    			//tweet function		
             		    		}
             		    		//update pubdate function
