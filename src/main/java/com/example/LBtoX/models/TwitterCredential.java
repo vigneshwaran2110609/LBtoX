@@ -14,29 +14,26 @@ public class TwitterCredential {
     @Column(name = "letterboxd_id", nullable = false, unique = true)
     private String letterboxdId;
 
-    @Column(name = "twitter_id", nullable = true)
+    @Column(name = "twitter_id")
     private String twitterId;
 
-    @Column(name = "twitter_handle", nullable = true)
+    @Column(name = "twitter_handle")
     private String twitterHandle;
 
-    @Column(name = "access_token", nullable = true, columnDefinition = "TEXT")
+    @Column(name = "access_token", columnDefinition = "TEXT", nullable = false)
     private String accessToken;
 
-    @Column(name = "access_token_secret", nullable = true, columnDefinition = "TEXT")
-    private String accessTokenSecret;
+    @Column(name = "refresh_token", columnDefinition = "TEXT", nullable = false)
+    private String refreshToken;
 
-    @Column(name = "bearer_token", columnDefinition = "TEXT")
-    private String bearerToken;
+    @Column(name = "expires_at", nullable = false)
+    private ZonedDateTime expiresAt;
 
-    @Column(name = "oauth_state")
-    private String oauthState;
-
-    @Column(name = "code_verifier")
-    private String codeVerifier;
+    @Column(name = "scope")
+    private String scope;
 
     @Column(name = "created_at", nullable = false)
-    private ZonedDateTime createdAt;
+    private ZonedDateTime createdAt = ZonedDateTime.now();
 
     @Column(name = "updated_at")
     private ZonedDateTime updatedAt;
@@ -44,19 +41,6 @@ public class TwitterCredential {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
-    public TwitterCredential() {}
-
-    public TwitterCredential(String letterboxdId, String twitterId, String twitterHandle,
-                           String accessToken, String accessTokenSecret) {
-        this.letterboxdId = letterboxdId;
-        this.twitterId = twitterId;
-        this.twitterHandle = twitterHandle;
-        this.accessToken = accessToken;
-        this.accessTokenSecret = accessTokenSecret;
-        this.createdAt = ZonedDateTime.now();
-    }
-
-    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -97,36 +81,28 @@ public class TwitterCredential {
         this.accessToken = accessToken;
     }
 
-    public String getAccessTokenSecret() {
-        return accessTokenSecret;
+    public String getRefreshToken() {
+        return refreshToken;
     }
 
-    public void setAccessTokenSecret(String accessTokenSecret) {
-        this.accessTokenSecret = accessTokenSecret;
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 
-    public String getBearerToken() {
-        return bearerToken;
+    public ZonedDateTime getExpiresAt() {
+        return expiresAt;
     }
 
-    public void setBearerToken(String bearerToken) {
-        this.bearerToken = bearerToken;
+    public void setExpiresAt(ZonedDateTime expiresAt) {
+        this.expiresAt = expiresAt;
     }
 
-    public String getOauthState() {
-        return oauthState;
+    public String getScope() {
+        return scope;
     }
 
-    public void setOauthState(String oauthState) {
-        this.oauthState = oauthState;
-    }
-
-    public String getCodeVerifier() {
-        return codeVerifier;
-    }
-
-    public void setCodeVerifier(String codeVerifier) {
-        this.codeVerifier = codeVerifier;
+    public void setScope(String scope) {
+        this.scope = scope;
     }
 
     public ZonedDateTime getCreatedAt() {
@@ -151,5 +127,9 @@ public class TwitterCredential {
 
     public void setIsActive(Boolean active) {
         isActive = active;
+    }
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = ZonedDateTime.now();
     }
 }

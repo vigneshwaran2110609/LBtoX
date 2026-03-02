@@ -7,9 +7,7 @@ import java.util.Optional;
 @Repository
 public interface LetterboxdProfileRepository extends JpaRepository<LetterboxdProfile, Long> {
 
-    // Find by Letterboxd username
     Optional<LetterboxdProfile> findByLetterboxdId(String letterboxdId);
 
-    // Check existence to avoid duplicates
     boolean existsByLetterboxdId(String letterboxdId);
 }

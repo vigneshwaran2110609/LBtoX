@@ -15,10 +15,10 @@ public class LetterboxdProfileService {
     @Autowired
     private LetterboxdProfileRepository letterboxdProfileRepository;
 
-    public ResponseEntity<Map<String, Object>> saveLetterboxdProfile(LetterboxdProfile letterboxdProfile){
+    public Boolean saveLetterboxdProfile(LetterboxdProfile letterboxdProfile){
         String letterboxdId = letterboxdProfile.getLetterboxdId();
         if (letterboxdProfileRepository.existsByLetterboxdId(letterboxdId)) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Letterboxd profile already exists"));
+            return false;
         }
         ZonedDateTime now = ZonedDateTime.now();
         letterboxdProfile.setPubDate(now);
@@ -29,8 +29,6 @@ public class LetterboxdProfileService {
         response.put("letterboxdId", letterboxdProfile.getLetterboxdId());
         response.put("status", "SAVED");
 
-        return ResponseEntity
-            .status(HttpStatus.CREATED)
-            .body(response);
+        return true;
     }
 }

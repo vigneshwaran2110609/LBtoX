@@ -1,29 +1,27 @@
 package com.example.LBtoX.controllers;
+import com.example.LBtoX.DTO.TwitterTokenResponse;
+import com.example.LBtoX.DTO.TwitterUserResponse;
 import com.example.LBtoX.models.LetterboxdProfile;
-import com.example.LBtoX.models.TwitterCredential;
 import com.example.LBtoX.services.LetterboxdProfileService;
-import com.example.LBtoX.services.TwitterOAuthService;
+import com.example.LBtoX.services.TwitterCredentialService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 import java.security.MessageDigest;
-import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Base64;
 
 @RestController
@@ -31,7 +29,7 @@ import java.util.Base64;
 public class ProfileController {
 
     @Autowired
-    private TwitterOAuthService twitterOAuthService;
+    private TwitterCredentialService credentialService;
 
     @Autowired
     private LetterboxdProfileService letterboxdProfileService;
@@ -44,6 +42,8 @@ public class ProfileController {
 
     @Value("${twitter.callback.url}")
     private String redirectUri;
+
+    private String letterboxdIdVar;
 
     @PostMapping("/profile")
     public ResponseEntity<?> saveLetterboxdProfile(@RequestBody Map<String, String> request) {
@@ -61,7 +61,7 @@ public class ProfileController {
         response.put("message", "Letterboxd profile saved successfully");
         response.put("letterboxdId", letterboxdId);
         response.put("status", "SAVED");
-
+        this.letterboxdIdVar = letterboxdId;
         return ResponseEntity.ok(response);
     }
 
@@ -78,26 +78,45 @@ public class ProfileController {
 
         WebClient webClient = WebClient.builder().build();
 
-        System.out.println("Code: " + code);
-        System.out.println("Redirect URI: " + redirectUri);
-        System.out.println("CodeVerifier: " + codeVerifier);
-        // System.out.println("Callback Session ID: " + session.getId());
-
-        String response = webClient.post()
-                .uri("https://api.x.com/2/oauth2/token")
-                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-                .header(HttpHeaders.AUTHORIZATION, "Basic " + encodedCredentials)
-                .body(BodyInserters
-                        .fromFormData("grant_type", "authorization_code")
-                        .with("code", code)
-                        .with("redirect_uri", redirectUri)
-                        .with("code_verifier", codeVerifier)
-                )
+        TwitterTokenResponse tokenResponse =
+            webClient.post()
+                    .uri("https://api.x.com/2/oauth2/token")
+                    .header(HttpHeaders.CONTENT_TYPE,
+                            MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+                    .header(HttpHeaders.AUTHORIZATION,
+                            "Basic " + encodedCredentials)
+                    .body(BodyInserters
+                            .fromFormData("grant_type", "authorization_code")
+                            .with("code", code)
+                            .with("redirect_uri", redirectUri)
+                            .with("code_verifier", codeVerifier)
+                    )
+                    .retrieve()
+                    .bodyToMono(TwitterTokenResponse.class)
+                    .block();
+        
+        TwitterUserResponse userResponse =
+        webClient.get()
+                .uri("https://api.x.com/2/users/me")
+                .header(HttpHeaders.AUTHORIZATION,
+                        "Bearer " + tokenResponse.getAccessToken())
                 .retrieve()
-                .bodyToMono(String.class)
+                .bodyToMono(TwitterUserResponse.class)
                 .block();
 
-        return ResponseEntity.ok(response);
+        String twitterId = userResponse.getData().getId();
+        String username = userResponse.getData().getUsername();
+
+        credentialService.saveOrUpdateCredentials(
+            this.letterboxdIdVar,
+            tokenResponse,
+            twitterId,
+            username
+        );
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(URI.create("http://localhost:3000/success"));
+        return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
     @GetMapping("/{letterboxdId}/twitter/authorize")
@@ -113,7 +132,6 @@ public class ProfileController {
                 .withoutPadding()
                 .encodeToString(code);
 
-        // 2️⃣ Create code_challenge (S256)
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] hash = digest.digest(codeVerifier.getBytes());
         String codeChallenge = Base64.getUrlEncoder()
@@ -140,60 +158,5 @@ public class ProfileController {
         return ResponseEntity.status(HttpStatus.FOUND)
                 .location(new URI(url))
                 .build();
-    }
-
-    @GetMapping("/{letterboxdId}/twitter/status")
-    public ResponseEntity<?> getTwitterStatus(@PathVariable String letterboxdId) {
-        Optional<TwitterCredential> credential = twitterOAuthService.getCredentialsByLetterboxdId(letterboxdId);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("letterboxdId", letterboxdId);
-
-        if (credential.isPresent()) {
-            TwitterCredential cred = credential.get();
-            response.put("isConnected", true);
-            response.put("twitterHandle", cred.getTwitterHandle());
-            response.put("twitterId", cred.getTwitterId());
-            response.put("canTweet", twitterOAuthService.testTweetCapability(letterboxdId));
-        } else {
-            response.put("isConnected", false);
-            response.put("canTweet", false);
-        }
-
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/{letterboxdId}/twitter/tweet")
-    public ResponseEntity<?> postTweet(
-            @PathVariable String letterboxdId,
-            @RequestBody Map<String, String> request) {
-        String message = request.get("message");
-
-        if (message == null || message.isBlank()) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", "message is required"));
-        }
-
-        if (message.length() > 280) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Tweet exceeds 280 characters"));
-        }
-
-        try {
-            String tweetId = twitterOAuthService.tweetMessage(letterboxdId, message);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "Tweet posted successfully");
-            response.put("tweetId", tweetId);
-            response.put("letterboxdId", letterboxdId);
-
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", e.getMessage()));
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to post tweet: " + e.getMessage()));
-        }
     }
 }

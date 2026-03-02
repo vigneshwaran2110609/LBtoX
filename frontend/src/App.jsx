@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import './App.css'
 import ProfileInput from './components/ProfileInput'
-import Callback from './Callback'
+import Success from './Success'
 
 function Home() {
   const [letterboxdId, setLetterboxdId] = useState('')
@@ -52,6 +52,7 @@ function Home() {
         <header className="header">
           <h1>🎬 LBtoX</h1>
           <p>Connect your Letterboxd reviews to Twitter</p>
+          <p>Authorise your twitter account every 6 months by entering your Letterboxd Profile</p>
         </header>
 
         {message && (
@@ -85,7 +86,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/callback" element={<Callback />} />
+      <Route path="/success" element={<Success />} />
     </Routes>
   )
 }

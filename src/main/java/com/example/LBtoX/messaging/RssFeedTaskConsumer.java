@@ -5,7 +5,10 @@ import org.springframework.stereotype.Component;
 import com.example.LBtoX.models.LetterboxdProfile;
 import com.example.LBtoX.models.LetterboxdRssEntry;
 import com.example.LBtoX.models.LetterboxdRssFeed;
+import com.example.LBtoX.repositories.LetterboxdProfileRepository;
 import com.example.LBtoX.services.RssFeedMessageService;
+import com.example.LBtoX.services.TwitterCredentialService;
+import com.example.LBtoX.services.LetterboxdRssEntryService;
 import com.example.LBtoX.services.RSSFeedService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -22,6 +25,15 @@ public class RssFeedTaskConsumer {
 	
 	@Autowired
 	private RssFeedMessageService rssFeedMessageService;
+
+	@Autowired
+	private TwitterCredentialService twitterCredentialService;
+
+	@Autowired
+	private LetterboxdRssEntryService letterboxdRssEntryService;
+
+	@Autowired
+	private LetterboxdProfileRepository letterboxdProfileRepository;
 	
 	@JmsListener(destination = "FeedProcessingQueue")
     public void receiveMessage(Long cycle) {
@@ -33,41 +45,45 @@ public class RssFeedTaskConsumer {
             executor.submit(() -> {
                 while (true) {
                     Map<LetterboxdProfile, LetterboxdRssFeed> mainFeedMap = rssFeedMessageService.processBatch(cycle, 1000);
-                    for (Map.Entry<LetterboxdProfile, LetterboxdRssFeed> entry
-                            : mainFeedMap.entrySet()) {
-                    	// System.out.println(entry.getValue());
+                    for (Map.Entry<LetterboxdProfile, LetterboxdRssFeed> entry : mainFeedMap.entrySet()) {
                     	LetterboxdProfile profile = entry.getKey();
+						String lbId = profile.getLetterboxdId();
             		    LetterboxdRssFeed feed = entry.getValue();
             		    ZonedDateTime firstEntryPubDate = rssFeedService.getFirstEntryPubDate(feed);
             		    ZonedDateTime pubDateFromDB = profile.getPubDate();
-            		    if (firstEntryPubDate != pubDateFromDB) {
+						//process only if the pubdate stored in db is not same as the pub date from db
+						//latest entries come first in the list
+						//lets say i watched a film on 3rd march, signed in on 4th march
+						//only the movies i watch after 4th march should be tweeted
+            		    if (!firstEntryPubDate.equals(pubDateFromDB)) {
             		    	if (feed.getItemCount() != 0) {
-            		    		//process all the entries present
+            		    		//process all the entries present during the first
             		    		List<LetterboxdRssEntry> feedEntries = feed.getItems();
             		    		for (LetterboxdRssEntry ent: feedEntries) {
-            		    			// System.out.println(ent);
-            		    			//tweet function		
+									//tweet only if entry date is after pubdatefromdb
+									if ( ent.getPubDate().isAfter(pubDateFromDB)){
+										// System.out.println("is true" + ent.getPubDate() + pubDateFromDB);
+										String review = letterboxdRssEntryService.extractLastParagraphText(ent.getDescription());
+										String movie = ent.getFilmTitle();
+										Double rating = letterboxdRssEntryService.parseRating(ent.getDisplayRating());
+										String post = movie + "\n" + rating + "\n" + review;
+										System.out.print(post);
+										twitterCredentialService.postTweet(lbId,post);
+									}
             		    		}
             		    		//update pubdate function
+								LetterboxdRssEntry lastEntry = feedEntries.get(0);
+								ZonedDateTime latestPubDateOfProfile = lastEntry.getPubDate();
+								profile.setPubDate(latestPubDateOfProfile);
+								System.out.println(profile.getPubDate());
+								letterboxdProfileRepository.save(profile);
             		    	}
             		    }
-            		    else {
-        		    		//process till pubDate is reached or end of list of reached
-        		    		List<LetterboxdRssEntry> feedEntries = feed.getItems();
-        		    		for (LetterboxdRssEntry ent: feedEntries) {
-        		    			if (ent.getPubDate() == pubDateFromDB) {
-        		    				break;
-        		    			}
-        		    			//tweet function
-        		    		}
-        		    		//update pubdate in letterboxdprofile db function
-        		    	}
                     }
             		    
                 }
             });
         }
-
         executor.shutdown();
     }
 }

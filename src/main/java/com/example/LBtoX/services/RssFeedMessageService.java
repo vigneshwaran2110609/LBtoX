@@ -32,5 +32,7 @@ public class RssFeedMessageService {
         return result;
 	    
 	}
+	
+
 
 }
