@@ -10,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -113,7 +112,7 @@ public class ProfileController {
             twitterId,
             username
         );
-        
+
         HttpHeaders headers = new HttpHeaders();
         headers.setLocation(URI.create("http://localhost:3000/success"));
         return new ResponseEntity<>(headers, HttpStatus.FOUND);

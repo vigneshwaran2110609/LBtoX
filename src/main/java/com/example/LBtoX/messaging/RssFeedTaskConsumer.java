@@ -2,10 +2,12 @@ package com.example.LBtoX.messaging;
 
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
+import com.example.LBtoX.DTO.LetterboxdProfilesIDs;
 import com.example.LBtoX.models.LetterboxdProfile;
 import com.example.LBtoX.models.LetterboxdRssEntry;
 import com.example.LBtoX.models.LetterboxdRssFeed;
 import com.example.LBtoX.repositories.LetterboxdProfileRepository;
+import com.example.LBtoX.repositories.ProfileProcessingRepository;
 import com.example.LBtoX.services.RssFeedMessageService;
 import com.example.LBtoX.services.TwitterCredentialService;
 import com.example.LBtoX.services.LetterboxdRssEntryService;
@@ -16,7 +18,13 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.time.ZonedDateTime;
-
+//Change this structure, after i retrieve the rows, put them in a global list (as in outside thread)
+//then process each and every entry one by one from that list
+// then mark as done.
+// this is done because we want to sepearate the processing of the profiles from fetching them
+// so even if multiple threads fetch them ( how is this happening or is this happening ? )
+// or is this happening because of multiple receivemessage calls?
+// if we process them outside of fetching there wont be a chance of muliple times processing of the same record with same value
 @Component
 public class RssFeedTaskConsumer {
 	
@@ -34,6 +42,9 @@ public class RssFeedTaskConsumer {
 
 	@Autowired
 	private LetterboxdProfileRepository letterboxdProfileRepository;
+		
+	@Autowired
+	private ProfileProcessingRepository processingRepository;
 	
 	@JmsListener(destination = "FeedProcessingQueue")
     public void receiveMessage(Long cycle) {
@@ -42,9 +53,11 @@ public class RssFeedTaskConsumer {
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
 
         for (int i = 0; i < threadCount; i++) {
+			
             executor.submit(() -> {
-                while (true) {
-                    Map<LetterboxdProfile, LetterboxdRssFeed> mainFeedMap = rssFeedMessageService.processBatch(cycle, 1000);
+					LetterboxdProfilesIDs temProfilesIDs = rssFeedMessageService.processBatch(cycle, 1000);
+					List<LetterboxdProfile> profiles = temProfilesIDs.getProfiles();
+					Map<LetterboxdProfile, LetterboxdRssFeed> mainFeedMap = rssFeedService.getFeedsFromProfiles(profiles);
                     for (Map.Entry<LetterboxdProfile, LetterboxdRssFeed> entry : mainFeedMap.entrySet()) {
                     	LetterboxdProfile profile = entry.getKey();
 						String lbId = profile.getLetterboxdId();
@@ -67,23 +80,29 @@ public class RssFeedTaskConsumer {
 										String movie = ent.getFilmTitle();
 										Double rating = letterboxdRssEntryService.parseRating(ent.getDisplayRating());
 										String post = movie + "\n" + rating + "\n" + review;
-										System.out.print(post);
-										twitterCredentialService.postTweet(lbId,post);
+										// System.out.print(post);
+										try {
+											twitterCredentialService.postTweet(lbId,post);
+										} catch (Exception e) {
+											e.printStackTrace();
+										}
+										System.out.println("outt");
 									}
-            		    		}
+            		    		}	
             		    		//update pubdate function
 								LetterboxdRssEntry lastEntry = feedEntries.get(0);
 								ZonedDateTime latestPubDateOfProfile = lastEntry.getPubDate();
 								profile.setPubDate(latestPubDateOfProfile);
 								System.out.println(profile.getPubDate());
+								System.out.println("xx");
 								letterboxdProfileRepository.save(profile);
             		    	}
             		    }
                     }
-            		    
-                }
+            	processingRepository.markDone(cycle, temProfilesIDs.getIDs());	    
+                
             });
-        }
+		}
         executor.shutdown();
     }
 }

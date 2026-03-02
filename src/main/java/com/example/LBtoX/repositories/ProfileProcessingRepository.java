@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 import com.example.LBtoX.models.*;
+import jakarta.transaction.Transactional;
+
 import java.util.*;
 
 @Repository
@@ -25,6 +27,7 @@ public interface ProfileProcessingRepository extends JpaRepository<ProfileProces
 	    );
 
 	    @Modifying
+		@Transactional
 	    @Query(value = """
 	        UPDATE profile_processing
 	        SET status = 'DONE'
