@@ -20,6 +20,9 @@ public class RssFeedMessageService {
 	@Transactional
 	public LetterboxdProfilesIDs processBatch(Long cycleId, int batchSize) {
 		List<Long> ids = processingRepository.lockNextBatch(cycleId, batchSize);
+		if (!ids.isEmpty()) {
+        	processingRepository.markInProgress(ids);
+    	}
         List<LetterboxdProfile> profiles = profileRepository.findAllById(ids);
         return new LetterboxdProfilesIDs(ids,profiles);
 	}

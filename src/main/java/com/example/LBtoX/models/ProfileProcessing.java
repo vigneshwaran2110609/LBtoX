@@ -7,7 +7,7 @@ public class ProfileProcessing {
     @EmbeddedId
     private ProfileProcessingId id;
 
-    private String status; // PENDING, PROCESSING, DONE
+    private String status;
 
     public ProfileProcessing() {
     }

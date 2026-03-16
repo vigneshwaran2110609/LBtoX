@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 import com.example.LBtoX.models.*;
 import jakarta.transaction.Transactional;
-
 import java.util.*;
 
 @Repository
@@ -45,5 +44,12 @@ public interface ProfileProcessingRepository extends JpaRepository<ProfileProces
 	        WHERE cycle_id = :cycleId
 	        """, nativeQuery = true)
 	    void deleteByCycleId(@Param("cycleId") Long cycleId);
-	}	
-	
+
+		@Modifying
+		@Query(value = """
+				UPDATE profile_processing
+				SET status = 'IN_PROGRESS'
+				WHERE profile_id IN (:ids)
+				""", nativeQuery = true)
+		void markInProgress(@Param("ids") List<Long> ids);
+	}
